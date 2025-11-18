@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  marketservice:
+    build:
+      context: ./src/marketservice
+      dockerfile: Dockerfile
+    ports:
+      - "3550:3550"
+    environment:
+      - PORT=3550
+      - ENABLE_KAFKA=${ENABLE_KAFKA:-0}
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+      - KAFKA_API_KEY=${KAFKA_API_KEY}
+      - KAFKA_API_SECRET=${KAFKA_API_SECRET}
+    volumes:
+      - ./src/marketservice/data:/root/data
+    networks:
+      - vibe-markets-net
+    healthcheck:
+      test: ["CMD", "sh", "-c", "nc -z localhost 3550 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  bettingservice:
+    build:
+      context: ./src/bettingservice
+      dockerfile: Dockerfile
+    ports:
+      - "3551:3551"
+    environment:
+      - PORT=3551
+      - ENABLE_KAFKA=${ENABLE_KAFKA:-0}
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+      - KAFKA_API_KEY=${KAFKA_API_KEY}
+      - KAFKA_API_SECRET=${KAFKA_API_SECRET}
+    networks:
+      - vibe-markets-net
+    healthcheck:
+      test: ["CMD", "sh", "-c", "nc -z localhost 3551 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  vibe-markets-net:
+    driver: bridge

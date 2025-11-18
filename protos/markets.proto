@@ -1,0 +1,168 @@
+// Copyright 2025 Vibe Markets
+// Licensed under the Apache License, Version 2.0
+
+syntax = "proto3";
+
+package vibemarket;
+
+option go_package = "github.com/GoogleCloudPlatform/microservices-demo/src/marketservice/genproto";
+
+// -----------------Market Service-----------------
+
+service MarketService {
+    rpc ListMarkets(ListMarketsRequest) returns (ListMarketsResponse) {}
+    rpc GetMarket(GetMarketRequest) returns (Market) {}
+    rpc SearchMarkets(SearchMarketsRequest) returns (SearchMarketsResponse) {}
+    rpc GetMarketStats(GetMarketStatsRequest) returns (MarketStats) {}
+}
+
+message Market {
+    string id = 1;
+    string title = 2;
+    string description = 3;
+    string resolution_criteria = 4;
+    int64 end_date = 5;  // Unix timestamp
+    string creator_id = 6;
+    string status = 7;  // "open", "closed", "resolved"
+    string outcome = 8;  // "YES", "NO", "CANCELED", "" for open markets
+    double yes_price = 9;  // Current probability (0.0 to 1.0)
+    double no_price = 10;   // Current probability (0.0 to 1.0)
+    double total_volume = 11;
+    int32 total_traders = 12;
+    string category = 13;  // "crypto", "sports", "politics", "tech", "entertainment"
+    string image_url = 14;
+    int64 created_at = 15;
+}
+
+message ListMarketsRequest {
+    string category = 1;  // Filter by category (empty = all)
+    string status = 2;    // Filter by status (empty = all)
+    int32 limit = 3;      // Max results (default 50)
+    int32 offset = 4;     // Pagination offset
+}
+
+message ListMarketsResponse {
+    repeated Market markets = 1;
+    int32 total_count = 2;
+}
+
+message GetMarketRequest {
+    string id = 1;
+}
+
+message SearchMarketsRequest {
+    string query = 1;
+    string category = 2;
+}
+
+message SearchMarketsResponse {
+    repeated Market results = 1;
+}
+
+message GetMarketStatsRequest {
+    string market_id = 1;
+}
+
+message MarketStats {
+    string market_id = 1;
+    double total_volume = 2;
+    int32 total_bets = 3;
+    int32 total_traders = 4;
+    double yes_volume = 5;
+    double no_volume = 6;
+    double price_24h_change = 7;
+    double volume_24h = 8;
+}
+
+// -----------------Betting Service-----------------
+
+service BettingService {
+    rpc PlaceBet(PlaceBetRequest) returns (PlaceBetResponse) {}
+    rpc GetUserPositions(GetUserPositionsRequest) returns (GetUserPositionsResponse) {}
+    rpc GetUserBalance(GetUserBalanceRequest) returns (UserBalance) {}
+}
+
+message PlaceBetRequest {
+    string user_id = 1;
+    string market_id = 2;
+    string side = 3;  // "YES" or "NO"
+    double amount = 4;  // Amount to bet in USD
+}
+
+message PlaceBetResponse {
+    string bet_id = 1;
+    double shares_received = 2;
+    double average_price = 3;
+    double new_market_price = 4;
+    string status = 5;  // "success", "failed"
+    string error_message = 6;
+}
+
+message Position {
+    string id = 1;
+    string user_id = 2;
+    string market_id = 3;
+    string side = 4;  // "YES" or "NO"
+    double shares = 5;
+    double average_cost = 6;
+    double current_value = 7;
+    double pnl = 8;
+    int64 created_at = 9;
+}
+
+message GetUserPositionsRequest {
+    string user_id = 1;
+    string market_id = 2;  // Optional: filter by market
+}
+
+message GetUserPositionsResponse {
+    repeated Position positions = 1;
+    double total_value = 2;
+    double total_pnl = 3;
+}
+
+message GetUserBalanceRequest {
+    string user_id = 1;
+}
+
+message UserBalance {
+    string user_id = 1;
+    double balance = 2;
+    double invested = 3;
+    double available = 4;
+}
+
+// -----------------Position Service (Cart replacement)-----------------
+
+service PositionService {
+    rpc AddPosition(AddPositionRequest) returns (Empty) {}
+    rpc GetPositions(GetPositionsRequest) returns (Positions) {}
+    rpc ClearPositions(ClearPositionsRequest) returns (Empty) {}
+}
+
+message PositionItem {
+    string market_id = 1;
+    string side = 2;  // "YES" or "NO"
+    double shares = 3;
+    double average_cost = 4;
+}
+
+message AddPositionRequest {
+    string user_id = 1;
+    PositionItem position = 2;
+}
+
+message ClearPositionsRequest {
+    string user_id = 1;
+}
+
+message GetPositionsRequest {
+    string user_id = 1;
+}
+
+message Positions {
+    string user_id = 1;
+    repeated PositionItem items = 2;
+}
+
+message Empty {}
